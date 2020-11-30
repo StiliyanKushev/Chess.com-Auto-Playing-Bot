@@ -1,0 +1,24 @@
+{
+    "name": "Ku6ev's Chess Bot",
+    "version": "1.0",
+    "description": "A Chess.com bot for playing chess",
+    "manifest_version": 2,
+    "content_scripts":[
+        {
+            "matches": [
+                "https://www.chess.com/live/*"
+            ],
+            "js": [
+                "client.js"
+            ]
+        }
+    ],
+    "background": {
+        "scripts": ["background.js"],
+        "persistent": false
+    },
+    "permissions": ["declarativeContent", "storage"],
+    "browser_action": {
+        "default_popup": "popup.html"
+    }
+}
