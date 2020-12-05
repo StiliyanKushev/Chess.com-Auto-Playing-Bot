@@ -99,7 +99,7 @@ function makeMove(dontPlayMove){
         let sq1 = moves[0] + moves[1];
         let sq2 = moves[2] + moves[3];
 
-        let el = document.getElementsByClassName("coordinates inside inside-coords chess-color-scheme-walnut")[0];
+        let el = document.getElementsByClassName("coordinates inside inside-coords")[0];
         let ba = el.getBoundingClientRect();
         let sq = document.getElementsByClassName("piece")[0];
 
@@ -111,17 +111,64 @@ function makeMove(dontPlayMove){
         let sq1Pos = squareToPos(sq1,sqSize,startX,startY)
         let sq2Pos = squareToPos(sq2,sqSize,startX,startY)
 
-        fetch('https://localhost:80/makeMove', {
-            headers: {
-            'Content-Type': 'application/json'
-            },
-            method: 'POST',
-            body: JSON.stringify({
-                sq1Pos,
-                sq2Pos
-            })
-        }).then(() => {})
+        let waitingTime = 0;
+
+        let startingTime = getStartingTime()
+
+        // stopSlowing down if we have 1 min left
+        if(startingTime === 60) { waitingTime = 0; console.log("less then a min. Think fast!") }
+
+        // play fast first 10 sec
+        else if(secondsLeft > startingTime - 10) { waitingTime = getRandomTimeBetween(500,1300); console.log("fast play first moves") }
+
+        // slow down until I have 33% of the starting time on the clock
+        else if(secondsLeft > startingTime * 0.3) { waitingTime = getRandomTimeBetween(3000,11000); console.log("play slower in mid game") }
+
+        setTimeout(() => {
+            fetch('https://localhost:80/makeMove', {
+                headers: {
+                'Content-Type': 'application/json'
+                },
+                method: 'POST',
+                body: JSON.stringify({
+                    sq1Pos,
+                    sq2Pos
+                })
+            }).then(() => {})
+        }, waitingTime)
     })
+}
+
+function getStartingTime(){
+    let all = document.getElementsByClassName("chat-message-component");
+    all = [...all].filter(e => e.textContent.indexOf("NEW GAME") >= 0);
+    let e = all[all.length - 1];
+
+    if(!e) {
+        console.log("[!] cannot get starting time")
+        return 0;
+    }
+
+    let text = e.textContent;
+    let rx = /(\([0-9] \| [0-9]\))|(\([0-9]+ min\))/g;
+    let format = text.match(rx)[0];
+
+    // has additional time on move
+    if(format.indexOf("|") >= 0){
+        let [mins,secs] = format.slice(1,-1).split(" | ").map(Number)
+        return secondsLeft = (mins * 60) + secs;
+    }
+    // is a normal game with not added time
+    else {
+        let mins = Number(format.slice(1,-1).split(" ")[0])
+        return secondsLeft = (mins * 60);
+    }
+}
+
+function getRandomTimeBetween(min,max){
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function squareToPos(s,sqSize,startX,startY){
